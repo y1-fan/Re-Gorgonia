@@ -1,0 +1,25 @@
+* text=auto
+
+# Source / scripts stay LF so they work inside WSL
+*.py text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.sh text eol=lf
+*.jinja text eol=lf
+
+# Windows launcher
+*.bat text eol=crlf
+
+# Fonts and model weights are binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.safetensors binary
+*.bin binary
+*.pt binary
+*.pth binary
+*.gguf binary

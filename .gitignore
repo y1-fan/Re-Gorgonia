@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Model weights and the active-model marker (downloaded via the UI)
+models/*
+!models/README.md
+!models/.gitkeep
+
+# User manuscripts, uploaded ALTO/images, results and caches
+workspace/*
+!workspace/README.md
+!workspace/.gitkeep
+
+# Large model artefacts anywhere
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+
+# Local settings / logs / OS junk
+.env
+*.log
+.DS_Store
+Thumbs.db

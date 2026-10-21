@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEDUSA · 手稿转写工作台</title>
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-title">MEDUSA <span>0.2</span></div>
+      <div class="brand-sub">medieval HTR workbench</div>
+    </div>
+
+    <div class="side-actions">
+      <button id="btnRunAll" class="primary" title="对工作区内所有页面运行识别">识别全部</button>
+      <button id="btnRescan" title="重新扫描工作区">↻</button>
+      <label class="upload-btn" title="上传 ALTO XML / 图片">
+        ＋<input type="file" id="fileInput" multiple
+                accept=".xml,.alto,.jpg,.jpeg,.png,.tif,.tiff,.webp,.bmp">
+      </label>
+    </div>
+
+    <button class="model-pill" id="btnModels" title="管理模型 / 下载 9B">
+      <span class="model-dot" id="modelDot"></span>
+      <span class="model-pill-name" id="modelPillName">模型</span>
+      <span class="model-caret">▾</span>
+    </button>
+
+    <div class="doc-list" id="docList"></div>
+
+    <div class="side-foot">
+      <div class="backend" id="backendBadge"><i></i><span>连接中…</span></div>
+      <div class="workspace-path" id="workspacePath"></div>
+      <div class="side-hint">双击行编辑 · 拖动平移 · 滚轮缩放</div>
+    </div>
+  </aside>
+
+  <main class="panes">
+    <section class="pane">
+      <header class="pane-head">
+        <div class="pane-title">图像 <span class="doc-name" id="imgDocName"></span></div>
+        <div class="tools">
+          <button id="btnZoomOut" title="缩小">−</button>
+          <span class="zoom" id="zoomLabel" title="滚轮缩放 · 拖动平移（两栏同步）">100%</span>
+          <button id="btnZoomIn" title="放大">＋</button>
+          <button id="btnFitWidth" class="on" title="按宽度适配">适宽</button>
+          <button id="btnFitPage" title="整页显示">整页</button>
+        </div>
+      </header>
+      <div class="viewport" id="viewImg">
+        <div class="page hidden" id="pageImg">
+          <img id="imgEl" alt="" draggable="false">
+          <svg class="poly-layer" id="polyImg" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="empty show" id="emptyImg">
+          工作区里还没有页面
+          <small>把 ALTO XML 和图片放进 workspace，或点左上角 ＋ 上传</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header class="pane-head">
+        <div class="pane-title">转写 <span class="doc-name" id="txtStat"></span></div>
+        <div class="tools">
+          <button id="btnPromptReset" class="ghost" title="恢复官方推荐提示词" hidden>恢复默认</button>
+          <button id="btnRunPage" class="primary">识别本页</button>
+          <button id="btnSettings" class="prompt-btn" title="编辑提示词">
+            提示词<span class="dot-mod" id="promptDirty" hidden></span>
+          </button>
+        </div>
+        <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
+      </header>
+      <div class="viewport" id="viewTxt">
+        <div class="page blank hidden" id="pageTxt">
+          <svg class="poly-layer text" id="polyTxt" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
+          <div class="boxes" id="boxesTxt"></div>
+        </div>
+        <div class="empty show" id="emptyTxt">
+          右侧显示模型输出
+          <small>点击任意行可查看完整转写与对齐信息</small>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer class="inspector" id="inspector">
+  <div class="insp-meta">
+    <b id="inspId">未选中行</b>
+    <span id="inspBox">点击任意行查看完整转写</span>
+  </div>
+  <div class="insp-main">
+    <div class="insp-text" id="inspText"></div>
+    <div class="insp-gt" id="inspGt"></div>
+  </div>
+</footer>
+
+<div class="line-editor" id="lineEditor" hidden>
+  <header class="le-head" id="leHead">
+    <b id="leId">—</b>
+    <span class="le-meta" id="leMeta"></span>
+    <span class="spacer"></span>
+    <span class="le-dirty" id="leDirty" hidden>未保存</span>
+    <button class="le-close" id="leClose" title="关闭（Esc）">×</button>
+  </header>
+  <div class="le-image"><img id="leImage" alt=""></div>
+  <textarea id="leText" rows="5" spellcheck="false"></textarea>
+  <div class="le-foot">
+    <span class="le-gt" id="leGt"></span>
+    <span class="spacer"></span>
+    <button id="leCancel">取消</button>
+    <button id="leSave" class="primary">保存</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<dialog id="modelDialog" class="model-dialog">
+  <div class="dialog-head">
+    <h2>模型</h2>
+    <button id="modelClose" title="关闭">×</button>
+  </div>
+  <div class="dialog-body">
+    <div class="model-meta">
+      <span id="modelDisk"></span>
+      <span id="modelEndpoint"></span>
+    </div>
+    <div id="modelList" class="model-list"></div>
+    <div id="modelDownload" class="model-download" hidden>
+      <div class="md-head"><b id="mdName">下载中</b><span id="mdPct">0%</span></div>
+      <div class="md-bar"><div id="mdBar"></div></div>
+      <div class="md-foot">
+        <span id="mdBytes"></span>
+        <span id="mdSpeed"></span>
+        <button id="mdCancel">取消下载</button>
+      </div>
+    </div>
+    <p class="note" id="modelNote"></p>
+  </div>
+</dialog>
+
+<dialog id="settingsDialog">
+  <div class="dialog-head">
+    <h2>提示词与识别设置</h2>
+    <button id="settingsClose" title="关闭">×</button>
+  </div>
+  <div class="dialog-body">
+    <div class="presets" id="presetList"></div>
+    <div class="prompt-hint" id="promptHint"></div>
+    <label class="field">
+      <span class="field-label">提示词内容 <em id="promptState">官方推荐</em></span>
+      <textarea id="promptInput" rows="9" spellcheck="false"></textarea>
+    </label>
+    <div class="field-row">
+      <label class="field">
+        <span>最大生成长度</span>
+        <input type="number" id="maxTokens" min="16" max="512" step="16" value="160">
+      </label>
+      <label class="check">
+        <input type="checkbox" id="forceRun"> 重跑已有结果
+      </label>
+    </div>
+    <p class="note">
+      提示词会随每页结果一起保存。模型对措辞敏感：官方两行版本是默认最优，展开缩写等改动可能降低准确率，建议两种都跑一页对比。
+    </p>
+  </div>
+  <div class="dialog-actions">
+    <button id="settingsReset" class="ghost" title="恢复官方推荐提示词">恢复官方默认</button>
+    <span class="spacer"></span>
+    <button id="settingsCancel">取消</button>
+    <button id="settingsSave" class="primary">保存</button>
+  </div>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
